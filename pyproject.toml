@@ -1,8 +1,12 @@
 [tool.poetry]
 name = "run-on-gce"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
 authors = ["Kaido Iwamoto <h6824.kaido@gmail.com>"]
+license = "MIT"
+packages = [
+    { include = "run_on_gce.py" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
