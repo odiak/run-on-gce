@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-
-if len(sys.argv) <= 1 or sys.argv[1] != "--really":
-    os.execvp(
-        "poetry", ("poetry", "run", "python", sys.argv[0], "--really", *sys.argv[1:])
-    )
-
 from subprocess import CalledProcessError, check_call, check_output
 from typing import Collection, Tuple
 from time import sleep
