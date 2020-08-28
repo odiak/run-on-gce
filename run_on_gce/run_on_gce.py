@@ -16,9 +16,7 @@ def run_on_gce(
     gcloud_compute = ("gcloud", f"--project={project}", "compute")
     ssh_host = f"{instance}.{location}.{project}"
 
-    python = "~/.pyenv/shims/python"
-    pip = "~/.pyenv/shims/pip"
-    poetry = "~/.pyenv/shims/poetry"
+    export = ("export", 'PATH="$HOME/.pyenv/shims:$PATH"')
 
     check_call((*gcloud_compute, "instances", "start", instance))
     check_call((*gcloud_compute, "config-ssh"))
@@ -38,11 +36,13 @@ def run_on_gce(
             instance,
             "--",
             *(
+                *export,
+                "&&",
                 *("mkdir", "-p", project_dir),
                 "&&",
                 *("cd", project_dir),
                 "&&",
-                *(pip, "-q", "install", "-U", "poetry"),
+                *("pip", "-q", "install", "-U", "poetry"),
                 "&&",
                 *("sudo", "apt", "install", "-yq", "rsync", ""),
             ),
@@ -66,13 +66,15 @@ def run_on_gce(
             instance,
             "--",
             *(
+                *export,
+                "&&",
                 *("cd", project_dir),
                 "&&",
-                *(*("[", "-d", ".venv", "]"), "||", *(python, "-m", "venv", ".venv")),
+                *(*("[", "-d", ".venv", "]"), "||", *("python", "-m", "venv", ".venv")),
                 "&&",
                 *(".venv/bin/pip", "-q", "install", "-U", "pip"),
                 "&&",
-                *(poetry, "install"),
+                *("poetry", "install"),
                 "&&",
                 *args,
             ),
