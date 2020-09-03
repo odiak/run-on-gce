@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from subprocess import CalledProcessError, check_call, check_output
-from typing import Collection, Tuple
+from typing import Collection
 from time import sleep
+from shlex import quote
 
 
 def run_on_gce(
@@ -11,12 +12,12 @@ def run_on_gce(
     location: str,
     project_dir: str,
     filter_rules: Collection[str],
-    args: Collection[str],
+    script: str,
 ) -> None:
     gcloud_compute = ("gcloud", f"--project={project}", "compute")
     ssh_host = f"{instance}.{location}.{project}"
 
-    export = ("export", 'PATH="$HOME/.pyenv/shims:$PATH"')
+    export = "export PATH=$HOME/.pyenv/shims:$PATH"
 
     check_call((*gcloud_compute, "instances", "start", instance))
     check_call((*gcloud_compute, "config-ssh"))
@@ -35,17 +36,13 @@ def run_on_gce(
             "ssh",
             instance,
             "--",
-            *(
-                *export,
-                "&&",
-                *("mkdir", "-p", project_dir),
-                "&&",
-                *("cd", project_dir),
-                "&&",
-                *("pip", "-q", "install", "-U", "poetry"),
-                "&&",
-                *("sudo", "apt", "install", "-yq", "rsync", ""),
-            ),
+            f"""
+                {export} &&
+                mkdir -p {quote(project_dir)} &&
+                cd {quote(project_dir)} &&
+                pip -q install -U poetry &&
+                sudo apt install -yq rsync
+            """,
         )
     )
     check_call(
@@ -65,19 +62,14 @@ def run_on_gce(
             "ssh",
             instance,
             "--",
-            *(
-                *export,
-                "&&",
-                *("cd", project_dir),
-                "&&",
-                *(*("[", "-d", ".venv", "]"), "||", *("python", "-m", "venv", ".venv")),
-                "&&",
-                *(".venv/bin/pip", "-q", "install", "-U", "pip"),
-                "&&",
-                *("poetry", "install"),
-                "&&",
-                *args,
-            ),
+            f"""
+                {export} &&
+                cd {quote(project_dir)} &&
+                [ -d .venv ] || python -m venv .venv &&
+                .venv/bin/pip -q install -U pip &&
+                poetry install &&
+                {script}
+            """,
         )
     )
 
